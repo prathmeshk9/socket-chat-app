@@ -1,0 +1,96 @@
+<html>
+<head>
+	<title>Chat app with socket.io and node.js</title>
+	<style>
+		#chat{
+			height : 500px;
+		}		
+		#contentWrap{
+			display : none;
+		}
+		#chatWrap{
+			float : left;
+			border: 1px #000 solid;
+		}
+	</style>
+</head>	
+<body>
+	<div id="nickWrap">
+		<p>Enter a userName:</p>	
+		<p id="nickError"></p> 
+		<form id="sendNick">
+		<input size="35" id="nickname"/>
+		<input type="submit"/>
+	</form>
+	</div>
+	<div id="contentWrap">
+		<div id="chatWrap">
+			<div id="chat"></div>
+			<form id="send-message">
+				<input size="35" id="message"/>
+				<input type="submit"/>
+			</form>			
+		</div>
+		<div id="users"></div>
+	</div>
+	
+	<script src="http://code.jquery.com/jquery-latest.min.js"></script>
+	<script src="/socket.io/socket.io.js"></script>
+	<script>
+		$(function($){			
+			var socket = io.connect();
+			
+			//Nick Name 
+			var $nickForm = $('#sendNick');
+			var $nickError = $('#nickError')
+			var $nickBox = $('#nickname');	
+			var $users = $('#users')			
+			
+			// Message
+			var $messageForm = $('#send-message');
+			var $messageBox = $('#message');
+			var $chat = $('#chat');
+			
+			
+			// nick button submit
+			$nickForm.submit(function(e){
+				console.log("nick button called....");	
+				e.preventDefault();
+				socket.emit('new user',$nickBox.val(),function(data){
+					if(data){
+						$('#nickWrap').hide();
+						$('#contentWrap').show();
+					}else{
+						$nickError.html("That UserName is Already Taken ! Try Again !");
+					}
+				});				
+				
+				$nickBox.val('');
+			});
+			
+			// display the online user
+			socket.on('usernames', function(data){
+				console.log("online users....");		
+				var html = '';
+				for(i=0;i<data.length;i++){
+					html += data[i] + '</br>';
+				}
+				$users.html(html);
+			});
+			
+			// message submit button
+			$messageForm.submit(function(e){
+				e.preventDefault();
+				socket.emit('send message', $messageBox.val());
+				
+				$messageBox.val('');
+			});
+			
+			socket.on('new message', function(data){
+				$chat.append("<b>"+ data.nick + " :</b>"+ data.msg + "<br/>");
+			});
+		});
+	</script>
+</body>	
+</html>
+
